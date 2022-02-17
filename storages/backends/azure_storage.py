@@ -374,6 +374,10 @@ class AzureStorage(BaseStorage):
         Leave the path empty to list the root.
         Order of dirs and files is undefined.
         """
+        if path:
+            path = self._get_valid_path(path)
+        if path and not path.endswith('/'):
+            path += '/'
         files = []
         dirs = set()
         for name in self.list_all(path):
