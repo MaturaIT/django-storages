@@ -308,6 +308,8 @@ class AzureStorage(BaseStorage):
             url = BlobClient.from_blob_url(container_blob_url, credential=credential).url
         elif container_blob_url.rfind('?') != -1:
             url = container_blob_url[:container_blob_url.rfind('?')]
+        else:
+            url = container_blob_url
         if self.custom_domain:
             url = url.replace(self.account_domain, self.custom_domain, 1)
 
