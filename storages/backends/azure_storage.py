@@ -150,9 +150,10 @@ class AzureStorage(BaseStorage):
         if self.connection_string is not None:
             return BlobServiceClient.from_connection_string(self.connection_string)
 
-        account_domain = self.custom_domain or "{}.blob.core.windows.net".format(
+        account_domain = "{}.blob.core.windows.net".format(
             self.account_name
         )
+        self.account_domain = account_domain
         account_url = "{}://{}".format(self.azure_protocol, account_domain)
 
         credential = None
@@ -282,10 +283,13 @@ class AzureStorage(BaseStorage):
         name = self._get_valid_path(name)
         params = parameters or {}
 
+        container_blob_url = self.client.get_blob_client(name).url
+
         if expire is None:
             expire = self.expiration_secs
 
         credential = None
+
         if expire:
             expiry = self._expire_at(expire)
             user_delegation_key = self.get_user_delegation_key(expiry)
@@ -301,8 +305,13 @@ class AzureStorage(BaseStorage):
             )
             credential = sas_token
 
-        container_blob_url = self.client.get_blob_client(name).url
-        return BlobClient.from_blob_url(container_blob_url, credential=credential).url
+            url = BlobClient.from_blob_url(container_blob_url, credential=credential).url
+        elif container_blob_url.rfind('?') != -1:
+            url = container_blob_url[:container_blob_url.rfind('?')]
+        if self.custom_domain:
+            url = url.replace(self.account_domain, self.custom_domain, 1)
+
+        return url
 
     def _get_content_settings_parameters(self, name, content=None):
         params = {}
